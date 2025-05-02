@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     environment {
@@ -50,15 +49,53 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonar-pro') {
-                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                       -Dsonar.projectName=vprofile-repo \
-                       -Dsonar.projectVersion=1.0 \
-                       -Dsonar.sources=src/ \
-                       -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
-                       -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                       -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                       -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+                    sh '''${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=vprofile \
+                        -Dsonar.projectName=vprofile-repo \
+                        -Dsonar.projectVersion=1.0 \
+                        -Dsonar.sources=src/ \
+                        -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
+                        -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
                 }
 
                 timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker App Image') {
+            steps {
+                script {
+                    dockerImage = docker.build("${registry}:V${BUILD_NUMBER}")
+                }
+            }
+        }
+
+        stage("Upload Image To DockerHub") {
+            steps {
+                script {
+                    docker.withRegistry('', registryCredential) {
+                        dockerImage.push("V${BUILD_NUMBER}")
+                        dockerImage.push('Latest')
+                    }
+                }
+            }
+        }
+
+        stage("Remove The Docker Image") {
+            steps {
+                sh "docker rmi ${registry}:V${BUILD_NUMBER}"
+            }
+        }
+
+        stage('Kubernetes Deploy') {
+            agent { label 'KOPS' }
+            steps {
+                sh "helm upgrade --install --force vprofile-stackhelm/vprofilecharts --set appimage=${registry}:V${BUILD_NUMBER} --namespace prod"
+            }
+        }
+    }
+}
