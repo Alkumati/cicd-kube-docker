@@ -48,30 +48,29 @@ pipeline {
         }
 
         stage('CODE ANALYSIS with SONARQUBE') {
-            agent {
-                // Use specific Java version for this stage
-                tools {
-                    jdk 'JAVA11'
-                }
-            }
             environment {
                 scannerHome = tool 'sonarscanner'
             }
             steps {
-                withSonarQubeEnv('sonar-pro') {
-                    sh """${scannerHome}/bin/sonar-scanner \\
-                        -Dsonar.projectKey=vprofile \\
-                        -Dsonar.projectName=vprofile-repo \\
-                        -Dsonar.projectVersion=1.0 \\
-                        -Dsonar.sources=src/ \\
-                        -Dsonar.java.binaries=target/ \\
-                        -Dsonar.junit.reportsPath=target/surefire-reports/ \\
-                        -Dsonar.jacoco.reportsPath=target/jacoco.exec \\
-                        -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml"""
-                }
+                script {
+                    def jdkHome = tool name: 'JAVA11', type: 'jdk'
+                    withSonarQubeEnv('sonar-pro') {
+                        withEnv(["JAVA_HOME=${jdkHome}", "PATH+JDK=${jdkHome}/bin"]) {
+                            sh """${scannerHome}/bin/sonar-scanner \\
+                                -Dsonar.projectKey=vprofile \\
+                                -Dsonar.projectName=vprofile-repo \\
+                                -Dsonar.projectVersion=1.0 \\
+                                -Dsonar.sources=src/ \\
+                                -Dsonar.java.binaries=target/ \\
+                                -Dsonar.junit.reportsPath=target/surefire-reports/ \\
+                                -Dsonar.jacoco.reportsPath=target/jacoco.exec \\
+                                -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml"""
+                        }
+                    }
 
-                timeout(time: 10, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
+                    timeout(time: 10, unit: 'MINUTES') {
+                        waitForQualityGate abortPipeline: true
+                    }
                 }
             }
         }
