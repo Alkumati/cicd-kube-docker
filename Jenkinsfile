@@ -53,7 +53,7 @@ pipeline {
             }
             steps {
                 script {
-                    def jdkHome = tool name: 'JAVA11', type: 'jdk'
+                    def jdkHome = tool name: 'JAVA17', type: 'jdk' // Replace with 'JAVA21' if using JDK 21
                     withSonarQubeEnv('sonar-pro') {
                         withEnv(["JAVA_HOME=${jdkHome}", "PATH+JDK=${jdkHome}/bin"]) {
                             sh """${scannerHome}/bin/sonar-scanner \\
@@ -61,7 +61,7 @@ pipeline {
                                 -Dsonar.projectName=vprofile-repo \\
                                 -Dsonar.projectVersion=1.0 \\
                                 -Dsonar.sources=src/ \\
-                                -Dsonar.java.binaries=target/ \\
+                                -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \\
                                 -Dsonar.junit.reportsPath=target/surefire-reports/ \\
                                 -Dsonar.jacoco.reportsPath=target/jacoco.exec \\
                                 -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml"""
