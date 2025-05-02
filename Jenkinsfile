@@ -53,7 +53,7 @@ pipeline {
             }
             steps {
                 withSonarQubeEnv('sonar-pro') {
-                    sh """JAVA_OPTS="--add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/java.lang.reflect=ALL-UNNAMED" \${scannerHome}/bin/sonar-scanner \\
+                    sh """\${scannerHome}/bin/sonar-scanner \\
                         -Dsonar.projectKey=vprofile \\
                         -Dsonar.projectName=vprofile-repo \\
                         -Dsonar.projectVersion=1.0 \\
