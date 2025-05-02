@@ -53,7 +53,7 @@ pipeline {
             }
             steps {
                 script {
-                    def jdkHome = tool name: 'JAVA17', type: 'jdk' // Replace with 'JAVA21' if using JDK 21
+                    def jdkHome = tool name: 'JAVA21', type: 'jdk' // Replace with 'JAVA21' if using JDK 21
                     withSonarQubeEnv('sonar-pro') {
                         withEnv(["JAVA_HOME=${jdkHome}", "PATH+JDK=${jdkHome}/bin"]) {
                             sh """${scannerHome}/bin/sonar-scanner \\
